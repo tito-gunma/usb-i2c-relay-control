@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python2
+﻿#!/usr/bin/env python3
 
 ## Copyright (c) 2013 by Silicon Laboratories.
 ## All rights reserved. This program and the accompanying materials
@@ -161,7 +161,7 @@ def GetString(index=0, vid=HID_SMBUS.VID, pid=HID_SMBUS.PID, opt=HID_SMBUS.SERIA
     """Returns the selected string for the indexed device with matching VID/PID."""
     buf = ct.create_string_buffer(512)
     _DLL.HidSmbus_GetString(index, vid, pid, buf, opt)
-    return buf.value.decode()
+    return buf.raw.decode('utf-8', 'ignore').strip('\x00')
 
 # HidSmbus_GetLibraryVersion(BYTE* major, BYTE* minor, BOOL* release);
 def GetLibraryVersion():
@@ -266,7 +266,7 @@ class HidSmbusDevice:
     def GetString(self, opt=HID_SMBUS.SERIAL_STR):
         buf = ct.create_string_buffer(512)
         _DLL.HidSmbus_GetOpenedString(self.handle, buf, opt)
-        return buf.value.decode()
+        return buf.raw.decode('utf-8', 'ignore').strip('\x00')
 
     # HidSmbus_CancelTransfer(HID_SMBUS_DEVICE device);
     def CancelTransfer(self):
@@ -305,7 +305,7 @@ class HidSmbusDevice:
             # Ignore timeout, return the data that was read
             if e.status != 0x12:
                 raise
-        return buf.value
+        return buf.raw[:n.value]
 
     # HidSmbus_WriteRequest(HID_SMBUS_DEVICE device, BYTE slaveAddress, BYTE* buffer, BYTE numBytesToWrite);
     def WriteRequest(self, address, buffer, count=None):
@@ -377,8 +377,8 @@ class HidSmbusDevice:
         _DLL.HidSmbus_WriteLatch(self.handle, latch, mask)
 
 def PRINTV(*arg):
-#    print(arg)
-    pass
+    print(*arg)
+#    pass
 
 def Test( DevIndex):
 
@@ -413,7 +413,7 @@ def Test( DevIndex):
         print("Device Error:", e, "-", hex(e.status))
     finally:
         smb.Close()
-        return rc
+    return rc
 
 def TestInvalDevIndex( NumDevices):
     rc = 0
@@ -426,7 +426,8 @@ def TestInvalDevIndex( NumDevices):
             print("TestInvalDevIndex: Unexpected error:", e, "-", hex(e.status))
             rc = -1
     finally:
-        return rc
+        pass
+    return rc
 
 def TestAll():
     errorlevel = 1
